@@ -37,8 +37,9 @@ const main = () => {
       const loadedIssues = loadJiraQuery(placeholder.queryString, '');
       const pieData = translateToPieChart(loadedIssues, placeholder.params);
       writeJiraDataToPie(pieData);
-      Logger.log(pieData);
+      Logger.log('Processed, copying to the output doc');
       copyChartFromSpreadsheet('PieChart', newDoc.getBody(), placeholder.raw);
+      Logger.log('Copied');
     }
   }
 
@@ -49,7 +50,6 @@ const pieMain = (query) => {
   const loadedIssues = loadJiraQuery(query, '');
   const pieData = translateToPieChart(loadedIssues);
   writeJiraDataToPie(pieData);
-  Logger.log(pieData);
 };
 
 const copyTemplate = (templateId) => {
@@ -99,7 +99,9 @@ const writeJiraDataToCfd = (data) => {
   }
   
   sheet.getRange(2, 1, sheet.getLastRow(), 5).clearContent();
-  sheet.getRange(2, 1, res.length, res[0].length).setValues(res);
+  if (res.length != 0) {
+    sheet.getRange(2, 1, res.length, res[0].length).setValues(res);
+  }
 };
 
 // this function is taken from https://gist.github.com/tanaikech/f84831455dea5c394e48caaee0058b26
@@ -122,7 +124,7 @@ const writeJiraDataToCfd = (data) => {
   };
 
 const copyChartFromSpreadsheet = (inputSheet, body, textToReplace) => {
-  const spreadsheet = SpreadsheetApp.openById('');
+  const spreadsheet = SpreadsheetApp.openById(chartDrawingSheet);
   const charts = spreadsheet.getSheetByName(inputSheet).getCharts();  
 
   for (let i in charts) {
@@ -309,12 +311,15 @@ const writeJiraDataToPie = (data) => {
   }
   
   sheet.getRange(2, 1, sheet.getLastRow(), 2).clearContent();
-  sheet.getRange(2, 1, res.length, res[0].length).setValues(res);
+  if (res.length != 0) {
+    sheet.getRange(2, 1, res.length, res[0].length).setValues(res);
+  }
 };
 
 const parseValueFromIssue = (issue, path) => {
   let res = issue;
   for (key of path.split(".")) {
+    // todo - if the last one is a list, squash the values to one
     res = res[key]
   }
   
@@ -351,9 +356,7 @@ function mergeDocs(docIDs,pagebreak) {
         latestElement = body.appendListItem(element);
       else
         throw new Error("Unsupported element type: "+type);
-      // If you find that element attributes are not coming through, uncomment the following
-      // line to explicitly copy the element attributes from the original doc.
-      //latestElement.setAttributes(clean(attributes));
+      latestElement.setAttributes(clean(attributes));
     }
   }
 }
@@ -497,4 +500,3 @@ bla after
   assert(res.length == 2);
 
 };
-
